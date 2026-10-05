@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: estudo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: estudo
+      POSTGRES_PASSWORD: estudo
+      POSTGRES_DB: estudo
+    ports:
+      - "5432:5432"
+    volumes:
+      - estudo-pgdata:/var/lib/postgresql/data
+
+volumes:
+  estudo-pgdata:
