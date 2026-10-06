@@ -150,6 +150,7 @@ func (s *Store) Delete(ctx context.Context, id int64) error {
 }
 
 func Register(mux *http.ServeMux, s *Store) {
+	registerImport(mux, s)
 	mux.HandleFunc("GET /api/topics", func(w http.ResponseWriter, r *http.Request) {
 		list, err := s.List(r.Context())
 		if err != nil {

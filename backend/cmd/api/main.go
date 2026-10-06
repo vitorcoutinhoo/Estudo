@@ -40,7 +40,7 @@ func main() {
 	exercises.Register(mux, exercises.NewStore(pool))
 	dashboard.Register(mux, pool)
 
-	addr := ":" + env("PORT", "8081")
+	addr := ":" + env("PORT", "8080")
 	log.Printf("API ouvindo em %s", addr)
 	log.Fatal(http.ListenAndServe(addr, httpx.CORS(mux)))
 }

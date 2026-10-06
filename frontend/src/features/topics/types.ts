@@ -15,3 +15,22 @@ export interface Topic {
 }
 
 export type TopicInput = Pick<Topic, 'title' | 'description' | 'priority' | 'status' | 'targetMinutes'>
+
+export interface ImportRow {
+  line: number
+  date: string
+  time: string
+  area: string
+  title: string
+  priority: Priority
+  minutes: number
+  done: boolean
+  duplicate: boolean
+}
+
+export interface ImportResult {
+  sheet: string
+  rows: ImportRow[]
+  errors: string[]
+  imported: number
+}

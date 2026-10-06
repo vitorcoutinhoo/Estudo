@@ -30,10 +30,12 @@ Variáveis da API: `DATABASE_URL` (padrão `postgres://estudo:estudo@localhost:5
 
 | Feature     | Backend                        | Frontend                         |
 |-------------|--------------------------------|----------------------------------|
-| topics      | `/api/topics` (CRUD)           | lista, filtros, tags editáveis   |
+| topics      | `/api/topics` (CRUD), `/api/topics/import` (.xlsx) | lista, filtros, tags editáveis, importação |
 | schedule    | `/api/schedule` (por data)     | cronograma diário + semana       |
 | sessions    | `/api/sessions` (horas)        | registrar horas por tópico       |
 | exercises   | `/api/exercises` (CRUD)        | enunciado, resolução, resolvido  |
 | dashboard   | `/api/dashboard`               | resumo, gráfico de 7 dias        |
 
 **Porcentagem do tópico** = horas estudadas ÷ meta de horas (máx. 100%). Tópicos com status "Concluído" valem 100%.
+
+**Importação (.xlsx)** — em Tópicos → "Importar .xlsx". A planilha precisa das colunas `Data | Dia | Horário | Área | Tema / Atividade | Prioridade | Concluído` (o modelo pode ser baixado no próprio modal). Cada linha vira um tópico (título = Tema, descrição = Área, meta = duração do horário, ex.: `19h–22h` = 3h, prioridade ALTA/MÉDIA/BAIXA — vazia = média) e um item no cronograma na data. Concluído marcado (`☑`, `x`, `sim`…) importa como concluído. Linhas já importadas (mesmo tema na mesma data) são puladas.

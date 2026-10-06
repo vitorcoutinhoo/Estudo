@@ -5,6 +5,7 @@ import { PRIORITY_LABEL, STATUS_LABEL, TagSelect } from '../../shared/ui/Tags'
 import { SessionForm } from '../sessions/SessionForm'
 import { deleteTopic, updateTopic } from './api'
 import { TopicForm } from './TopicForm'
+import { TopicImport } from './TopicImport'
 import { useTopics } from './TopicsContext'
 import type { Priority, Status, Topic } from './types'
 
@@ -12,6 +13,7 @@ export function TopicsPage() {
   const { topics, loading, error, reload } = useTopics()
   const [editing, setEditing] = useState<Topic | 'new' | null>(null)
   const [logging, setLogging] = useState<Topic | null>(null)
+  const [importing, setImporting] = useState(false)
   const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all')
   const [priorityFilter, setPriorityFilter] = useState<Priority | 'all'>('all')
 
@@ -46,7 +48,10 @@ export function TopicsPage() {
           <h1>Tópicos</h1>
           <p className="muted">Tudo o que você está estudando, com meta de horas e progresso.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setEditing('new')}>+ Novo tópico</button>
+        <div className="tag-group">
+          <button className="btn" onClick={() => setImporting(true)}>Importar .xlsx</button>
+          <button className="btn btn-primary" onClick={() => setEditing('new')}>+ Novo tópico</button>
+        </div>
       </header>
 
       <div className="toolbar">
@@ -131,6 +136,7 @@ export function TopicsPage() {
           onSaved={reload}
         />
       )}
+      {importing && <TopicImport onClose={() => setImporting(false)} onSaved={reload} />}
       {logging && <SessionForm topicId={logging.id} onClose={() => setLogging(null)} onSaved={reload} />}
     </>
   )

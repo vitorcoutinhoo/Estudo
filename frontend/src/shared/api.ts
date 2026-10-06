@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_URL ?? ''
+export const BASE = import.meta.env.VITE_API_URL ?? ''
 
 interface Options {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -6,10 +6,11 @@ interface Options {
 }
 
 export async function api<T>(path: string, { method = 'GET', body }: Options = {}): Promise<T> {
+  const form = body instanceof FormData
   const res = await fetch(BASE + path, {
     method,
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
+    headers: body && !form ? { 'Content-Type': 'application/json' } : undefined,
+    body: form ? body : body ? JSON.stringify(body) : undefined,
   })
   if (!res.ok) {
     const data = await res.json().catch(() => null)
