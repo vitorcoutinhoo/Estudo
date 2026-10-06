@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { fmtMinutes } from '../../shared/format'
+import { useNav } from '../../shared/nav'
 import { ProgressBar } from '../../shared/ui/ProgressBar'
 import { PRIORITY_LABEL, STATUS_LABEL, TagSelect } from '../../shared/ui/Tags'
 import { SessionForm } from '../sessions/SessionForm'
@@ -11,6 +12,7 @@ import type { Priority, Status, Topic } from './types'
 
 export function TopicsPage() {
   const { topics, loading, error, reload } = useTopics()
+  const { go } = useNav()
   const [editing, setEditing] = useState<Topic | 'new' | null>(null)
   const [logging, setLogging] = useState<Topic | null>(null)
   const [importing, setImporting] = useState(false)
@@ -115,10 +117,10 @@ export function TopicsPage() {
                 <b>{fmtMinutes(t.studiedMinutes)}</b>
                 {t.targetMinutes > 0 && <span className="muted"> / {fmtMinutes(t.targetMinutes)}</span>} estudadas
               </span>
-              <span>
+              <button className="link-btn" onClick={() => go('exercises', t.id)} title="Ver exercícios deste tópico">
                 <b>{t.exercisesSolved}</b>
-                <span className="muted"> / {t.exercisesTotal}</span> exercícios
-              </span>
+                <span className="muted"> / {t.exercisesTotal}</span> exercícios →
+              </button>
               <span className="topic-actions">
                 <button className="btn btn-small" onClick={() => setLogging(t)}>+ Registrar horas</button>
                 <button className="btn btn-small" onClick={() => setEditing(t)}>Editar</button>

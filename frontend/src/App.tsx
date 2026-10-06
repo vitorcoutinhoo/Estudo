@@ -4,15 +4,14 @@ import { ExercisesPage } from './features/exercises/ExercisesPage'
 import { SchedulePage } from './features/schedule/SchedulePage'
 import { TopicsPage } from './features/topics/TopicsPage'
 import { TopicsProvider, useTopics } from './features/topics/TopicsContext'
+import { NavContext, type PageKey } from './shared/nav'
 
 const PAGES = {
   dashboard: { label: 'Painel', icon: '◧', view: DashboardPage },
   schedule: { label: 'Cronograma', icon: '▤', view: SchedulePage },
   topics: { label: 'Tópicos', icon: '◉', view: TopicsPage },
   exercises: { label: 'Exercícios', icon: '✎', view: ExercisesPage },
-} as const
-
-type PageKey = keyof typeof PAGES
+} as const satisfies Record<PageKey, unknown>
 
 function ApiBanner() {
   const { error, reload } = useTopics()
@@ -26,8 +25,10 @@ function ApiBanner() {
 }
 
 function Shell() {
-  const [page, setPage] = useState<PageKey>('dashboard')
+  const [nav, setNav] = useState<{ page: PageKey; topicId?: number }>({ page: 'dashboard' })
+  const page = nav.page
   const View = PAGES[page].view
+  const go = (page: PageKey, topicId?: number) => setNav({ page, topicId })
 
   return (
     <>
@@ -39,7 +40,7 @@ function Shell() {
           </div>
           <nav>
             {(Object.keys(PAGES) as PageKey[]).map((k) => (
-              <button key={k} className={`nav-item ${page === k ? 'is-active' : ''}`} onClick={() => setPage(k)}>
+              <button key={k} className={`nav-item ${page === k ? 'is-active' : ''}`} onClick={() => go(k)}>
                 <span className="nav-icon" aria-hidden>{PAGES[k].icon}</span>
                 {PAGES[k].label}
               </button>
@@ -48,7 +49,9 @@ function Shell() {
         </aside>
         <main className="content">
           <ApiBanner />
-          <View />
+          <NavContext.Provider value={{ topicId: nav.topicId, go }}>
+            <View key={`${page}-${nav.topicId ?? ''}`} />
+          </NavContext.Provider>
         </main>
       </div>
     </>

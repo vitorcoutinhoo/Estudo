@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNav } from '../../shared/nav'
 import { ProgressBar } from '../../shared/ui/ProgressBar'
 import { useTopics } from '../topics/TopicsContext'
 import { deleteExercise, listExercises, updateExercise, type Exercise } from './api'
@@ -6,7 +7,8 @@ import { ExerciseForm } from './ExerciseForm'
 
 export function ExercisesPage() {
   const { topics, reload: reloadTopics } = useTopics()
-  const [topicFilter, setTopicFilter] = useState(0)
+  const nav = useNav()
+  const [topicFilter, setTopicFilter] = useState(nav.topicId ?? 0)
   const [showSolved, setShowSolved] = useState<'all' | 'solved' | 'pending'>('all')
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [error, setError] = useState('')
@@ -73,7 +75,7 @@ export function ExercisesPage() {
           Tópico
           <select value={topicFilter} onChange={(e) => setTopicFilter(Number(e.target.value))}>
             <option value={0}>Todos</option>
-            {topics.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+            {topics.map((t) => <option key={t.id} value={t.id}>{t.description ? `${t.description} · ` : ''}{t.title}</option>)}
           </select>
         </label>
         <label className="inline-field">
@@ -106,8 +108,10 @@ export function ExercisesPage() {
               <div className="exercise-body">
                 <h4>Enunciado</h4>
                 <pre>{e.statement || '—'}</pre>
-                <h4>Resolução</h4>
-                <pre>{e.solution || '—'}</pre>
+                <details className="solution">
+                  <summary>Mostrar resolução</summary>
+                  <pre>{e.solution || '—'}</pre>
+                </details>
               </div>
             )}
           </article>

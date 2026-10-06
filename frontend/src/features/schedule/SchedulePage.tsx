@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { addDays, fmtLongDate, fmtMinutes, fmtWeekday, fromISO, todayISO, weekStart } from '../../shared/format'
+import { useNav } from '../../shared/nav'
 import { PriorityTag } from '../../shared/ui/Tags'
 import { SessionForm } from '../sessions/SessionForm'
 import { useTopics } from '../topics/TopicsContext'
@@ -7,6 +8,7 @@ import { createScheduleItem, deleteScheduleItem, listSchedule, patchScheduleItem
 
 export function SchedulePage() {
   const { topics } = useTopics()
+  const { go } = useNav()
   const [date, setDate] = useState(todayISO())
   const [items, setItems] = useState<ScheduleItem[]>([])
   const [error, setError] = useState('')
@@ -104,19 +106,29 @@ export function SchedulePage() {
         {dayItems.length === 0 && <div className="empty">Sem itens neste dia. Adicione um tópico abaixo.</div>}
 
         <ul className="schedule-list">
-          {dayItems.map((i) => (
+          {dayItems.map((i) => {
+            const topic = topics.find((t) => t.id === i.topicId)
+            return (
             <li key={i.id} className={`schedule-item ${i.done ? 'is-done' : ''}`}>
               <input type="checkbox" checked={i.done} onChange={() => toggle(i)} aria-label={`Concluir ${i.topicTitle}`} />
               <div className="schedule-main">
                 <strong>{i.topicTitle}</strong>
-                {i.note && <span className="muted">{i.note}</span>}
+                <span className="schedule-sub">
+                  {i.note && <span className="muted">{i.note}</span>}
+                  {topic && topic.exercisesTotal > 0 && (
+                    <button className="link-btn muted" onClick={() => go('exercises', i.topicId)} title="Ver exercícios deste tópico">
+                      {topic.exercisesSolved}/{topic.exercisesTotal} exercícios →
+                    </button>
+                  )}
+                </span>
               </div>
               <PriorityTag value={i.topicPriority} />
               <span className="schedule-time">{fmtMinutes(i.plannedMinutes)}</span>
               <button className="btn btn-small" onClick={() => setLogging(i)}>Registrar horas</button>
               <button className="icon-btn" onClick={() => remove(i)} aria-label="Remover do cronograma">×</button>
             </li>
-          ))}
+            )
+          })}
         </ul>
 
         <form className="add-row" onSubmit={add}>
