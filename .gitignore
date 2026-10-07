@@ -1,4 +1,8 @@
 node_modules/
-dist/
+frontend/dist/
+backend/internal/web/dist/*
+!backend/internal/web/dist/.gitkeep
+release/
+backend/config.yaml
 *.exe
 .env

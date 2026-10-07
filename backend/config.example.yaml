@@ -1,0 +1,22 @@
+# Configuração do Estudo. Procurado em: $ESTUDO_CONFIG, ao lado do executável, diretório atual.
+# As variáveis de ambiente PORT e DATABASE_URL sobrescrevem os valores abaixo
+# (DATABASE_URL também força database.mode = external).
+
+server:
+  # 127.0.0.1 = só esta máquina. Use 0.0.0.0 para acessar pela rede local.
+  host: 127.0.0.1
+  # Se a porta estiver ocupada, outra livre é escolhida automaticamente.
+  port: 8080
+  # Abre o navegador ao iniciar (só quando o frontend está embutido no binário).
+  open_browser: true
+
+database:
+  # embedded: Postgres embutido, sem Docker (os binários são baixados na 1ª execução).
+  # external: conecta em database.url (ex.: o Postgres do docker-compose.yml).
+  mode: embedded
+  url: postgres://estudo:estudo@localhost:5432/estudo?sslmode=disable
+  embedded:
+    # Porta incomum para não conflitar com outro Postgres instalado.
+    port: 54329
+    # Onde ficam os dados. Vazio = %APPDATA%\Estudo (Windows) / ~/.config/Estudo (Linux).
+    data_dir: ""

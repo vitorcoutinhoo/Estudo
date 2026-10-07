@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -22,6 +23,12 @@ func Connect(ctx context.Context, url string) (*pgxpool.Pool, error) {
 		return nil, err
 	}
 	return pool, nil
+}
+
+func connectQuick(ctx context.Context, url string) (*pgxpool.Pool, error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	return Connect(ctx, url)
 }
 
 // Migrate aplica os arquivos .sql embutidos em ordem alfabética (todos idempotentes).
