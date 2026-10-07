@@ -164,14 +164,21 @@ export function DashboardPage() {
           {recent.length === 0 && <div className="empty">Nenhuma hora registrada ainda.</div>}
           <ul className="log-list">
             {recent.map((s) => (
-              <li key={s.id}>
-                <div>
-                  <strong>{s.topicTitle}</strong>
-                  <span className="muted"> · {s.date.split('-').reverse().slice(0, 2).join('/')}{s.note ? ` · ${s.note}` : ''}</span>
+              <li key={s.id} className="log-entry">
+                <div className="log-head">
+                  <strong className="log-title">{s.topicTitle}</strong>
+                  <span className="log-duration">{fmtMinutes(s.minutes)}</span>
                 </div>
-                <span className="schedule-time">{fmtMinutes(s.minutes)}</span>
-                <button className="btn btn-small" onClick={() => setEditingSession(s)}>Editar</button>
-                <button className="icon-btn" onClick={() => removeSession(s)} aria-label="Remover registro">×</button>
+                {s.note && <p className="log-note" title={s.note}>{s.note}</p>}
+                <div className="log-foot">
+                  <span className="log-date">
+                    {fmtWeekday(s.date)}, {s.date.split('-').reverse().slice(0, 2).join('/')}
+                  </span>
+                  <span className="log-actions">
+                    <button className="link-btn" onClick={() => setEditingSession(s)}>Editar</button>
+                    <button className="link-btn" onClick={() => removeSession(s)}>Remover</button>
+                  </span>
+                </div>
               </li>
             ))}
           </ul>
