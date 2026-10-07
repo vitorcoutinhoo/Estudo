@@ -1,38 +1,30 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useState } from 'react'
+import { useCached } from '../../shared/cache'
 import { addDays, fmtLongDate, fmtMinutes, fmtWeekday, fromISO, todayISO, weekStart } from '../../shared/format'
 import { useNav } from '../../shared/nav'
 import { PriorityTag } from '../../shared/ui/Tags'
 import { SessionForm } from '../sessions/SessionForm'
 import { useTopics } from '../topics/TopicsContext'
-import { createScheduleItem, deleteScheduleItem, listSchedule, patchScheduleItem, type ScheduleItem } from './api'
+import { deleteScheduleItem, fmtTimeRange, listSchedule, patchScheduleItem, type ScheduleItem } from './api'
+import { ScheduleItemForm } from './ScheduleItemForm'
+
+export const scheduleQuery = (start: string) =>
+  [`schedule:${start}`, () => listSchedule(start, addDays(start, 6))] as const
 
 export function SchedulePage() {
   const { topics } = useTopics()
   const { go } = useNav()
   const [date, setDate] = useState(todayISO())
-  const [items, setItems] = useState<ScheduleItem[]>([])
-  const [error, setError] = useState('')
+  const [actionError, setActionError] = useState('')
   const [logging, setLogging] = useState<ScheduleItem | null>(null)
-
-  const [topicId, setTopicId] = useState(0)
-  const [minutes, setMinutes] = useState('60')
-  const [note, setNote] = useState('')
+  const [editing, setEditing] = useState<ScheduleItem | 'new' | null>(null)
 
   const start = weekStart(date)
   const week = Array.from({ length: 7 }, (_, i) => addDays(start, i))
 
-  const load = useCallback(async () => {
-    try {
-      setItems(await listSchedule(start, addDays(start, 6)))
-      setError('')
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Falha ao carregar cronograma')
-    }
-  }, [start])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  const { data, error: loadError, reload: load } = useCached(...scheduleQuery(start))
+  const items = data ?? []
+  const error = actionError || loadError
 
   const dayItems = items.filter((i) => i.date === date)
   const plannedTotal = dayItems.reduce((s, i) => s + i.plannedMinutes, 0)
@@ -42,19 +34,10 @@ export function SchedulePage() {
     try {
       await action()
       await load()
+      setActionError('')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Ação falhou')
+      setActionError(e instanceof Error ? e.message : 'Ação falhou')
     }
-  }
-
-  async function add(e: FormEvent) {
-    e.preventDefault()
-    const chosen = topicId || topics[0]?.id
-    if (!chosen) return
-    await run(async () => {
-      await createScheduleItem({ topicId: chosen, date, plannedMinutes: Number(minutes) || 60, note })
-      setNote('')
-    })
   }
 
   const toggle = (i: ScheduleItem) => run(() => patchScheduleItem(i.id, { done: !i.done }))
@@ -103,7 +86,7 @@ export function SchedulePage() {
           </span>
         </div>
 
-        {dayItems.length === 0 && <div className="empty">Sem itens neste dia. Adicione um tópico abaixo.</div>}
+        {dayItems.length === 0 && <div className="empty">Sem itens neste dia.</div>}
 
         <ul className="schedule-list">
           {dayItems.map((i) => {
@@ -114,7 +97,9 @@ export function SchedulePage() {
               <div className="schedule-main">
                 <strong>{i.topicTitle}</strong>
                 <span className="schedule-sub">
-                  {i.note && <span className="muted">{i.note}</span>}
+                  {(i.startTime || i.note) && (
+                    <span className="muted">{[fmtTimeRange(i), i.note].filter(Boolean).join(' · ')}</span>
+                  )}
                   {topic && topic.exercisesTotal > 0 && (
                     <button className="link-btn muted" onClick={() => go('exercises', i.topicId)} title="Ver exercícios deste tópico">
                       {topic.exercisesSolved}/{topic.exercisesTotal} exercícios →
@@ -124,6 +109,7 @@ export function SchedulePage() {
               </div>
               <PriorityTag value={i.topicPriority} />
               <span className="schedule-time">{fmtMinutes(i.plannedMinutes)}</span>
+              <button className="btn btn-small" onClick={() => setEditing(i)}>Editar</button>
               <button className="btn btn-small" onClick={() => setLogging(i)}>Registrar horas</button>
               <button className="icon-btn" onClick={() => remove(i)} aria-label="Remover do cronograma">×</button>
             </li>
@@ -131,17 +117,22 @@ export function SchedulePage() {
           })}
         </ul>
 
-        <form className="add-row" onSubmit={add}>
-          <select value={topicId || topics[0]?.id || ''} onChange={(e) => setTopicId(Number(e.target.value))} aria-label="Tópico">
-            {topics.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
-          </select>
-          <input type="number" min="5" step="5" value={minutes} onChange={(e) => setMinutes(e.target.value)} aria-label="Minutos planejados" title="Minutos planejados" />
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (opcional)" aria-label="Nota" />
-          <button className="btn btn-primary" disabled={topics.length === 0}>+ Adicionar</button>
-        </form>
+        <div className="add-row">
+          <button className="btn btn-primary" onClick={() => setEditing('new')} disabled={topics.length === 0}>
+            + Adicionar período neste dia
+          </button>
+        </div>
         {topics.length === 0 && <p className="muted">Crie um tópico primeiro para montar o cronograma.</p>}
       </section>
 
+      {editing && (
+        <ScheduleItemForm
+          item={editing === 'new' ? undefined : editing}
+          date={date}
+          onClose={() => setEditing(null)}
+          onSaved={load}
+        />
+      )}
       {logging && (
         <SessionForm
           topicId={logging.topicId}

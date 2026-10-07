@@ -2,9 +2,11 @@ import { useState, type FormEvent } from 'react'
 import { todayISO } from '../../shared/format'
 import { Modal } from '../../shared/ui/Modal'
 import { useTopics } from '../topics/TopicsContext'
-import { createSession } from './api'
+import { createSession, updateSession, type Session } from './api'
 
 interface Props {
+  /** Registro existente: o formulário passa a editar em vez de criar. */
+  session?: Session
   topicId?: number
   date?: string
   minutes?: number
@@ -14,13 +16,13 @@ interface Props {
 
 const QUICK = [15, 30, 45, 60, 90, 120]
 
-/** Registra horas estudadas em um tópico. */
-export function SessionForm({ topicId, date, minutes, onClose, onSaved }: Props) {
+/** Registra (ou edita) horas estudadas em um tópico. */
+export function SessionForm({ session, topicId, date, minutes, onClose, onSaved }: Props) {
   const { topics, reload } = useTopics()
-  const [topic, setTopic] = useState(topicId ?? topics[0]?.id ?? 0)
-  const [day, setDay] = useState(date ?? todayISO())
-  const [mins, setMins] = useState(String(minutes ?? 60))
-  const [note, setNote] = useState('')
+  const [topic, setTopic] = useState(session?.topicId ?? topicId ?? topics[0]?.id ?? 0)
+  const [day, setDay] = useState(session?.date ?? date ?? todayISO())
+  const [mins, setMins] = useState(String(session?.minutes ?? minutes ?? 60))
+  const [note, setNote] = useState(session?.note ?? '')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -28,7 +30,9 @@ export function SessionForm({ topicId, date, minutes, onClose, onSaved }: Props)
     e.preventDefault()
     setSaving(true)
     try {
-      await createSession({ topicId: topic, date: day, minutes: Number(mins), note })
+      const body = { topicId: topic, date: day, minutes: Number(mins), note }
+      if (session) await updateSession(session.id, body)
+      else await createSession(body)
       await reload()
       await onSaved()
       onClose()
@@ -39,7 +43,7 @@ export function SessionForm({ topicId, date, minutes, onClose, onSaved }: Props)
   }
 
   return (
-    <Modal title="Registrar horas estudadas" onClose={onClose}>
+    <Modal title={session ? 'Editar registro de horas' : 'Registrar horas estudadas'} onClose={onClose}>
       <form className="form" onSubmit={submit}>
         <label>
           Tópico
@@ -54,7 +58,7 @@ export function SessionForm({ topicId, date, minutes, onClose, onSaved }: Props)
           </label>
           <label>
             Minutos
-            <input type="number" min="1" step="5" value={mins} onChange={(e) => setMins(e.target.value)} required />
+            <input type="number" min="1" step="1" value={mins} onChange={(e) => setMins(e.target.value)} required />
           </label>
         </div>
         <div className="chips">
@@ -71,7 +75,7 @@ export function SessionForm({ topicId, date, minutes, onClose, onSaved }: Props)
         {error && <p className="form-error">{error}</p>}
         <footer className="form-actions">
           <button type="button" className="btn" onClick={onClose}>Cancelar</button>
-          <button type="submit" className="btn btn-primary" disabled={saving || !topic}>Registrar</button>
+          <button type="submit" className="btn btn-primary" disabled={saving || !topic}>{session ? 'Salvar' : 'Registrar'}</button>
         </footer>
       </form>
     </Modal>

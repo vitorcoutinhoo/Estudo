@@ -153,7 +153,7 @@ input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--primary)
 .schedule-sub { display: flex; gap: 12px; flex-wrap: wrap; }
 .schedule-item.is-done .schedule-main strong { text-decoration: line-through; color: var(--muted); }
 .schedule-time { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.add-row { display: grid; grid-template-columns: 1.4fr 90px 1.4fr auto; gap: 10px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+.add-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
 
 /* topics */
 .topic-list, .exercise-list { display: flex; flex-direction: column; gap: 12px; }
@@ -189,7 +189,6 @@ input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--primary)
   .sidebar nav { flex-direction: row; overflow-x: auto; }
   .nav-item { white-space: nowrap; }
   .stat-grid, .form-row, .form-row-2 { grid-template-columns: 1fr; }
-  .add-row { grid-template-columns: 1fr 1fr; }
   .topic-head { flex-direction: column; }
   .topic-actions { margin-left: 0; }
   .schedule-item { flex-wrap: wrap; }

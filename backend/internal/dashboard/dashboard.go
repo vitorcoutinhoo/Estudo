@@ -44,8 +44,8 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool) {
 			(SELECT COUNT(*) FROM schedule_items WHERE date=$1::date)::int,
 			(SELECT COUNT(*) FROM schedule_items WHERE date=$1::date AND done)::int,
 			(SELECT COUNT(*) FROM topics)::int,
-			(SELECT COUNT(*) FROM topics WHERE status='done')::int,
-			(SELECT COUNT(*) FROM topics WHERE status='in_progress')::int,
+			(SELECT COUNT(*) FROM topics WHERE status='done' AND target_minutes > 0)::int,
+			(SELECT COUNT(*) FROM topics WHERE status='in_progress' AND target_minutes > 0)::int,
 			(SELECT COUNT(*) FROM exercises)::int,
 			(SELECT COUNT(*) FROM exercises WHERE solved)::int`, today).
 			Scan(&s.TotalMinutes, &s.TodayMinutes, &s.TodayPlanned, &s.TodayItems, &s.TodayItemsDone,

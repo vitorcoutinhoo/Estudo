@@ -1,37 +1,34 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useCached } from '../../shared/cache'
 import { fmtLongDate, fmtMinutes, fmtWeekday, todayISO } from '../../shared/format'
 import { ProgressBar } from '../../shared/ui/ProgressBar'
 import { PriorityTag } from '../../shared/ui/Tags'
-import { listSchedule, patchScheduleItem, type ScheduleItem } from '../schedule/api'
+import { fmtTimeRange, listSchedule, patchScheduleItem, type ScheduleItem } from '../schedule/api'
 import { deleteSession, listSessions, type Session } from '../sessions/api'
 import { SessionForm } from '../sessions/SessionForm'
 import { useTopics } from '../topics/TopicsContext'
 import { getSummary, type Summary } from './api'
 
+export function dashboardQuery() {
+  const d = todayISO()
+  return [
+    `dashboard:${d}`,
+    async (): Promise<{ summary: Summary; today: ScheduleItem[]; recent: Session[] }> => {
+      const [summary, today, sessions] = await Promise.all([getSummary(d), listSchedule(d, d), listSessions()])
+      return { summary, today, recent: sessions.slice(0, 5) }
+    },
+  ] as const
+}
+
 export function DashboardPage() {
   const { topics, reload } = useTopics()
-  const [summary, setSummary] = useState<Summary | null>(null)
-  const [today, setToday] = useState<ScheduleItem[]>([])
-  const [recent, setRecent] = useState<Session[]>([])
-  const [error, setError] = useState('')
   const [logging, setLogging] = useState(false)
-
-  const load = useCallback(async () => {
-    const d = todayISO()
-    try {
-      const [s, sched, sessions] = await Promise.all([getSummary(d), listSchedule(d, d), listSessions()])
-      setSummary(s)
-      setToday(sched)
-      setRecent(sessions.slice(0, 5))
-      setError('')
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Falha ao carregar o painel')
-    }
-  }, [])
-
-  useEffect(() => {
-    void load()
-  }, [load, topics])
+  const [editingSession, setEditingSession] = useState<Session | null>(null)
+  // recarrega quando os tópicos mudam (horas registradas, status etc.)
+  const { data, error, reload: load } = useCached(...dashboardQuery(), [topics])
+  const summary = data?.summary
+  const today = data?.today ?? []
+  const recent = data?.recent ?? []
 
   async function toggle(i: ScheduleItem) {
     await patchScheduleItem(i.id, { done: !i.done })
@@ -43,9 +40,11 @@ export function DashboardPage() {
     await Promise.all([load(), reload()])
   }
 
-  const overall = topics.length ? Math.round(topics.reduce((sum, t) => sum + t.progress, 0) / topics.length) : 0
+  // tópicos sem meta (avulsos) não entram no progresso
+  const tracked = topics.filter((t) => t.targetMinutes > 0)
+  const overall = tracked.length ? Math.round(tracked.reduce((sum, t) => sum + t.progress, 0) / tracked.length) : 0
   const max = Math.max(60, ...(summary?.last7Days.map((d) => d.minutes) ?? []))
-  const active = topics.filter((t) => t.status === 'in_progress')
+  const active = tracked.filter((t) => t.status === 'in_progress')
   const dayPct = summary && summary.todayPlanned > 0 ? Math.min(100, Math.round((summary.todayMinutes * 100) / summary.todayPlanned)) : 0
 
   return (
@@ -110,7 +109,9 @@ export function DashboardPage() {
                 <input type="checkbox" checked={i.done} onChange={() => toggle(i)} aria-label={`Concluir ${i.topicTitle}`} />
                 <div className="schedule-main">
                   <strong>{i.topicTitle}</strong>
-                  {i.note && <span className="muted">{i.note}</span>}
+                  {(i.startTime || i.note) && (
+                    <span className="muted">{[fmtTimeRange(i), i.note].filter(Boolean).join(' · ')}</span>
+                  )}
                 </div>
                 <PriorityTag value={i.topicPriority} />
                 <span className="schedule-time">{fmtMinutes(i.plannedMinutes)}</span>
@@ -169,6 +170,7 @@ export function DashboardPage() {
                   <span className="muted"> · {s.date.split('-').reverse().slice(0, 2).join('/')}{s.note ? ` · ${s.note}` : ''}</span>
                 </div>
                 <span className="schedule-time">{fmtMinutes(s.minutes)}</span>
+                <button className="btn btn-small" onClick={() => setEditingSession(s)}>Editar</button>
                 <button className="icon-btn" onClick={() => removeSession(s)} aria-label="Remover registro">×</button>
               </li>
             ))}
@@ -177,6 +179,7 @@ export function DashboardPage() {
       </div>
 
       {logging && <SessionForm onClose={() => setLogging(false)} onSaved={load} />}
+      {editingSession && <SessionForm session={editingSession} onClose={() => setEditingSession(null)} onSaved={load} />}
     </>
   )
 }

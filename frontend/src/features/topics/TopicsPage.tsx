@@ -4,6 +4,8 @@ import { useNav } from '../../shared/nav'
 import { ProgressBar } from '../../shared/ui/ProgressBar'
 import { PRIORITY_LABEL, STATUS_LABEL, TagSelect } from '../../shared/ui/Tags'
 import { SessionForm } from '../sessions/SessionForm'
+import { PeriodsModal } from '../schedule/PeriodsModal'
+import { SessionsModal } from '../sessions/SessionsModal'
 import { deleteTopic, updateTopic } from './api'
 import { TopicForm } from './TopicForm'
 import { TopicImport } from './TopicImport'
@@ -16,12 +18,15 @@ export function TopicsPage() {
   const [editing, setEditing] = useState<Topic | 'new' | null>(null)
   const [logging, setLogging] = useState<Topic | null>(null)
   const [importing, setImporting] = useState(false)
+  const [viewingHours, setViewingHours] = useState<Topic | null>(null)
+  const [viewingPeriods, setViewingPeriods] = useState<Topic | null>(null)
   const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all')
   const [priorityFilter, setPriorityFilter] = useState<Priority | 'all'>('all')
 
   const visible = topics.filter(
     (t) =>
-      (statusFilter === 'all' || t.status === statusFilter) &&
+      // tópicos sem meta não têm status: só aparecem em "Todos"
+      (statusFilter === 'all' || (t.targetMinutes > 0 && t.status === statusFilter)) &&
       (priorityFilter === 'all' || t.priority === priorityFilter),
   )
 
@@ -97,26 +102,35 @@ export function TopicsPage() {
                   label="Prioridade"
                   onChange={(v) => patch(t, { priority: v })}
                 />
-                <TagSelect
-                  value={t.status}
-                  options={STATUS_LABEL}
-                  className={`tag-status-${t.status}`}
-                  label="Status"
-                  onChange={(v) => patch(t, { status: v })}
-                />
+                {t.targetMinutes > 0 ? (
+                  <TagSelect
+                    value={t.status}
+                    options={STATUS_LABEL}
+                    className={`tag-status-${t.status}`}
+                    label="Status"
+                    onChange={(v) => patch(t, { status: v })}
+                  />
+                ) : (
+                  <span className="tag tag-status-todo" title="Tópico avulso: sem meta, status ou progresso">Sem meta</span>
+                )}
               </div>
             </div>
 
-            <div className="topic-progress">
-              <ProgressBar value={t.progress} label={`Progresso de ${t.title}`} />
-              <strong className="percent">{t.progress}%</strong>
-            </div>
+            {t.targetMinutes > 0 && (
+              <div className="topic-progress">
+                <ProgressBar value={t.progress} label={`Progresso de ${t.title}`} />
+                <strong className="percent">{t.progress}%</strong>
+              </div>
+            )}
 
             <div className="topic-meta">
-              <span>
+              <button className="link-btn" onClick={() => setViewingHours(t)} title="Ver e editar horas registradas">
                 <b>{fmtMinutes(t.studiedMinutes)}</b>
-                {t.targetMinutes > 0 && <span className="muted"> / {fmtMinutes(t.targetMinutes)}</span>} estudadas
-              </span>
+                {t.targetMinutes > 0 && <span className="muted"> / {fmtMinutes(t.targetMinutes)}</span>} estudadas →
+              </button>
+              <button className="link-btn" onClick={() => setViewingPeriods(t)} title="Ver e editar datas e horários no cronograma">
+                Períodos de estudo →
+              </button>
               <button className="link-btn" onClick={() => go('exercises', t.id)} title="Ver exercícios deste tópico">
                 <b>{t.exercisesSolved}</b>
                 <span className="muted"> / {t.exercisesTotal}</span> exercícios →
@@ -138,6 +152,8 @@ export function TopicsPage() {
           onSaved={reload}
         />
       )}
+      {viewingPeriods && <PeriodsModal topic={viewingPeriods} onClose={() => setViewingPeriods(null)} />}
+      {viewingHours && <SessionsModal topic={topics.find((t) => t.id === viewingHours.id) ?? viewingHours} onClose={() => setViewingHours(null)} />}
       {importing && <TopicImport onClose={() => setImporting(false)} onSaved={reload} />}
       {logging && <SessionForm topicId={logging.id} onClose={() => setLogging(null)} onSaved={reload} />}
     </>

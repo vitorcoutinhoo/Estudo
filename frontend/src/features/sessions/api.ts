@@ -19,4 +19,6 @@ export interface SessionInput {
 export const listSessions = (topicId?: number) =>
   api<Session[]>(`/api/sessions${topicId ? `?topicId=${topicId}` : ''}`)
 export const createSession = (body: SessionInput) => api<Session>('/api/sessions', { method: 'POST', body })
+export const updateSession = (id: number, body: SessionInput) =>
+  api<Session>(`/api/sessions/${id}`, { method: 'PUT', body })
 export const deleteSession = (id: number) => api<void>(`/api/sessions/${id}`, { method: 'DELETE' })

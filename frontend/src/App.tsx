@@ -1,7 +1,9 @@
-import { useState } from 'react'
-import { DashboardPage } from './features/dashboard/DashboardPage'
-import { ExercisesPage } from './features/exercises/ExercisesPage'
-import { SchedulePage } from './features/schedule/SchedulePage'
+import { useEffect, useState } from 'react'
+import { prefetch } from './shared/cache'
+import { todayISO, weekStart } from './shared/format'
+import { DashboardPage, dashboardQuery } from './features/dashboard/DashboardPage'
+import { ExercisesPage, exercisesQuery } from './features/exercises/ExercisesPage'
+import { SchedulePage, scheduleQuery } from './features/schedule/SchedulePage'
 import { TopicsPage } from './features/topics/TopicsPage'
 import { TopicsProvider, useTopics } from './features/topics/TopicsContext'
 import { NavContext, type PageKey } from './shared/nav'
@@ -25,6 +27,12 @@ function ApiBanner() {
 }
 
 function Shell() {
+  // pré-carrega as outras abas para a navegação ser instantânea
+  useEffect(() => {
+    void prefetch(...dashboardQuery())
+    void prefetch(...scheduleQuery(weekStart(todayISO())))
+    void prefetch(...exercisesQuery)
+  }, [])
   const [nav, setNav] = useState<{ page: PageKey; topicId?: number }>({ page: 'dashboard' })
   const page = nav.page
   const View = PAGES[page].view

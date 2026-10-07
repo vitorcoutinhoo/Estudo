@@ -97,18 +97,35 @@ func parseDate(v string) (string, error) {
 
 var timeRange = regexp.MustCompile(`^(\d{1,2})\s*[h:]?\s*(\d{2})?\s*h?\s*(?:–|—|-|a|às)\s*(\d{1,2})\s*[h:]?\s*(\d{2})?`)
 
-// rangeMinutes converte "19h–22h", "19:00 - 22:30", "19h30–22h" em minutos. Sem horário = 0.
-func rangeMinutes(v string) int {
+// parseRange converte "19h–22h", "19:00 - 22:30", "19h30–22h" em início/fim ("HH:MM").
+// ok = false quando não há horário (ex.: "—").
+func parseRange(v string) (start, end string, ok bool) {
 	m := timeRange.FindStringSubmatch(strings.ToLower(v))
 	if m == nil {
-		return 0
+		return "", "", false
 	}
-	at := func(h, min string) int {
+	hhmm := func(h, min string) (string, bool) {
 		hh, _ := strconv.Atoi(h)
 		mm, _ := strconv.Atoi(min)
-		return hh*60 + mm
+		return fmt.Sprintf("%02d:%02d", hh, mm), hh < 24 && mm < 60
 	}
-	d := at(m[3], m[4]) - at(m[1], m[2])
+	start, ok1 := hhmm(m[1], m[2])
+	end, ok2 := hhmm(m[3], m[4])
+	return start, end, ok1 && ok2
+}
+
+// rangeMinutes devolve a duração do horário em minutos (sem horário = 0).
+func rangeMinutes(v string) int {
+	start, end, ok := parseRange(v)
+	if !ok {
+		return 0
+	}
+	at := func(s string) int {
+		var h, m int
+		fmt.Sscanf(s, "%d:%d", &h, &m)
+		return h*60 + m
+	}
+	d := at(end) - at(start)
 	if d < 0 {
 		d += 24 * 60
 	}
@@ -224,9 +241,14 @@ func (s *Store) Import(ctx context.Context, rows []ImportRow) (int, error) {
 		if err != nil {
 			return 0, err
 		}
+		var start, end *string
+		if s, e, ok := parseRange(r.Time); ok {
+			start, end = &s, &e
+		}
 		_, err = tx.Exec(ctx,
-			`INSERT INTO schedule_items (topic_id, date, planned_minutes, done, note) VALUES ($1,$2::date,$3,$4,$5)`,
-			id, r.Date, r.Minutes, r.Done, r.Time)
+			`INSERT INTO schedule_items (topic_id, date, planned_minutes, done, start_time, end_time)
+			 VALUES ($1,$2::date,$3,$4,$5::time,$6::time)`,
+			id, r.Date, r.Minutes, r.Done, start, end)
 		if err != nil {
 			return 0, err
 		}

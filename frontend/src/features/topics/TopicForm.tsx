@@ -58,17 +58,22 @@ export function TopicForm({ topic, onClose, onSaved }: Props) {
               {Object.entries(PRIORITY_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </label>
-          <label>
-            Status
-            <select value={status} onChange={(e) => setStatus(e.target.value as Status)}>
-              {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-          </label>
+          {Number(targetHours) > 0 && (
+            <label>
+              Status
+              <select value={status} onChange={(e) => setStatus(e.target.value as Status)}>
+                {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </label>
+          )}
           <label>
             Meta (horas)
             <input type="number" min="0" step="0.5" value={targetHours} onChange={(e) => setTargetHours(e.target.value)} />
           </label>
         </div>
+        {!(Number(targetHours) > 0) && (
+          <p className="muted">Sem meta: tópico avulso (ex.: revisões pontuais). Acumula horas e exercícios, mas não tem status nem progresso.</p>
+        )}
         {error && <p className="form-error">{error}</p>}
         <footer className="form-actions">
           <button type="button" className="btn" onClick={onClose}>Cancelar</button>

@@ -1,32 +1,24 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useCached } from '../../shared/cache'
 import { useNav } from '../../shared/nav'
 import { ProgressBar } from '../../shared/ui/ProgressBar'
 import { useTopics } from '../topics/TopicsContext'
 import { deleteExercise, listExercises, updateExercise, type Exercise } from './api'
 import { ExerciseForm } from './ExerciseForm'
 
+// carrega todos e filtra por tópico no cliente: trocar de tópico não faz nova requisição
+export const exercisesQuery = ['exercises', () => listExercises()] as const
+
 export function ExercisesPage() {
   const { topics, reload: reloadTopics } = useTopics()
   const nav = useNav()
   const [topicFilter, setTopicFilter] = useState(nav.topicId ?? 0)
   const [showSolved, setShowSolved] = useState<'all' | 'solved' | 'pending'>('all')
-  const [exercises, setExercises] = useState<Exercise[]>([])
-  const [error, setError] = useState('')
   const [editing, setEditing] = useState<Exercise | 'new' | null>(null)
   const [open, setOpen] = useState<number | null>(null)
 
-  const load = useCallback(async () => {
-    try {
-      setExercises(await listExercises(topicFilter || undefined))
-      setError('')
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Falha ao carregar exercícios')
-    }
-  }, [topicFilter])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  const { data, error, reload: load } = useCached(...exercisesQuery)
+  const exercises = (data ?? []).filter((e) => !topicFilter || e.topicId === topicFilter)
 
   const refresh = async () => {
     await Promise.all([load(), reloadTopics()])
@@ -89,7 +81,8 @@ export function ExercisesPage() {
       </div>
 
       {error && <p className="form-error">{error}</p>}
-      {visible.length === 0 && <div className="empty">Nenhum exercício por aqui ainda.</div>}
+      {!data && !error && <p className="muted">Carregando…</p>}
+      {data && visible.length === 0 && <div className="empty">Nenhum exercício por aqui ainda.</div>}
 
       <div className="exercise-list">
         {visible.map((e) => (

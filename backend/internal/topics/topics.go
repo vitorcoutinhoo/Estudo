@@ -60,6 +60,10 @@ func (in *input) validate() string {
 	if in.TargetMinutes < 0 {
 		return "meta de horas inválida"
 	}
+	// tópico sem meta é avulso (ex.: revisões pontuais): não tem status nem progresso
+	if in.TargetMinutes == 0 {
+		in.Status = "todo"
+	}
 	return ""
 }
 
@@ -85,8 +89,11 @@ func scan(row scanner) (Topic, error) {
 	return t, err
 }
 
-// progress: tópico concluído = 100%; senão, horas estudadas / meta de horas.
+// progress: tópico sem meta não tem progresso; concluído = 100%; senão, horas estudadas / meta.
 func progress(t Topic) int {
+	if t.TargetMinutes <= 0 {
+		return 0
+	}
 	if t.Status == "done" {
 		return 100
 	}
