@@ -19,6 +19,8 @@ type Exercise struct {
 	Statement  string `json:"statement"`
 	Solution   string `json:"solution"`
 	Solved     bool   `json:"solved"`
+	PdfName    string `json:"pdfName"`
+	PdfSize    int64  `json:"pdfSize"`
 }
 
 type input struct {
@@ -30,7 +32,8 @@ type input struct {
 }
 
 const selectExercises = `
-SELECT e.id, e.topic_id, t.title, e.title, e.statement, e.solution, e.solved
+SELECT e.id, e.topic_id, t.title, e.title, e.statement, e.solution, e.solved,
+       e.pdf_name, COALESCE(octet_length(e.pdf_data), 0)
 FROM exercises e JOIN topics t ON t.id = e.topic_id`
 
 type Store struct{ db *pgxpool.Pool }
@@ -41,7 +44,7 @@ type scanner interface{ Scan(dest ...any) error }
 
 func scan(r scanner) (Exercise, error) {
 	var e Exercise
-	err := r.Scan(&e.ID, &e.TopicID, &e.TopicTitle, &e.Title, &e.Statement, &e.Solution, &e.Solved)
+	err := r.Scan(&e.ID, &e.TopicID, &e.TopicTitle, &e.Title, &e.Statement, &e.Solution, &e.Solved, &e.PdfName, &e.PdfSize)
 	return e, err
 }
 
@@ -138,4 +141,5 @@ func Register(mux *http.ServeMux, s *Store) {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
+	registerPDF(mux, s)
 }
