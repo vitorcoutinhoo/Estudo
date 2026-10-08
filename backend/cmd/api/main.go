@@ -25,6 +25,9 @@ import (
 	"estudo/internal/web"
 )
 
+// version é gravada no build (build.ps1 -Version, que o workflow de release preenche com a tag).
+var version = "dev"
+
 func main() {
 	if err := run(); err != nil {
 		log.Printf("erro: %v", err)
@@ -82,7 +85,7 @@ func run() error {
 		return err
 	}
 	url := "http://" + browserHost(cfg.Server.Host) + fmt.Sprintf(":%d", ln.Addr().(*net.TCPAddr).Port)
-	log.Printf("Estudo rodando em %s (Ctrl+C para sair)", url)
+	log.Printf("Estudo %s rodando em %s (Ctrl+C para sair)", version, url)
 	if cfg.Server.OpenBrowser && web.Available() {
 		openBrowser(url)
 	}

@@ -6,3 +6,4 @@ release/
 backend/config.yaml
 *.exe
 .env
+/out/

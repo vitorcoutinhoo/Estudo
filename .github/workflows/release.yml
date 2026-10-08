@@ -1,0 +1,87 @@
+# Publica uma release com os executáveis prontos a cada tag de versão:
+#   git tag v1.2.0 && git push origin v1.2.0
+# Tags com hífen (ex.: v1.2.0-beta.1) saem como pré-release.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: build
+        shell: pwsh
+        run: |
+          $targets = @(
+            @{ OS = "windows"; Arch = "amd64"; Name = "windows-amd64" },
+            @{ OS = "linux";   Arch = "amd64"; Name = "linux-amd64" },
+            @{ OS = "darwin";  Arch = "arm64"; Name = "macos-arm64" },
+            @{ OS = "darwin";  Arch = "amd64"; Name = "macos-amd64" }
+          )
+          $first = $true
+          foreach ($t in $targets) {
+            # o frontend é igual para todos: compila só na primeira vez
+            ./build.ps1 -OS $t.OS -Arch $t.Arch -Version $env:GITHUB_REF_NAME -Out "out/$($t.Name)/Estudo" -SkipFrontend:(-not $first)
+            $first = $false
+          }
+
+      - name: empacotar
+        run: |
+          mkdir -p dist
+          cd out
+          for d in */; do
+            name="Estudo-${GITHUB_REF_NAME}-${d%/}"
+            # zip no Windows; tar.gz no Linux/macOS para manter a permissão de execução
+            if [[ $d == windows-* ]]; then
+              (cd "$d" && zip -qr "../../dist/$name.zip" Estudo)
+            else
+              tar -czf "../dist/$name.tar.gz" -C "$d" Estudo
+            fi
+          done
+          ls -lh ../dist
+
+      - name: publicar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > notes.md <<'EOF'
+          ## Como usar
+
+          Baixe o arquivo do seu sistema, extraia e abra o `Estudo` (no Windows, `Estudo.exe`). O navegador abre sozinho.
+          Na primeira execução ele baixa o Postgres embutido (~30 MB), então precisa de internet.
+
+          | Sistema | Arquivo |
+          |---|---|
+          | Windows | `windows-amd64.zip` |
+          | Linux | `linux-amd64.tar.gz` |
+          | macOS (M1/M2/M3/M4) | `macos-arm64.tar.gz` |
+          | macOS (Intel) | `macos-amd64.tar.gz` |
+
+          - **Windows:** se aparecer "O Windows protegeu o computador", clique em *Mais informações → Executar assim mesmo* (o executável não é assinado).
+          - **macOS:** o sistema bloqueia apps baixados sem assinatura. No Terminal, dentro da pasta extraída: `xattr -d com.apple.quarantine Estudo && ./Estudo`.
+          - **Atualizar:** substitua só o executável e mantenha o `config.yaml`. Os dados ficam fora da pasta (`%APPDATA%\Estudo`, `~/.config/Estudo` ou `~/Library/Application Support/Estudo`) e não se perdem.
+
+          EOF
+          prerelease=""
+          [[ $GITHUB_REF_NAME == *-* ]] && prerelease="--prerelease"
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --verify-tag --title "Estudo $GITHUB_REF_NAME" \
+            --notes-file notes.md --generate-notes $prerelease

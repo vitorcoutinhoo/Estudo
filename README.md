@@ -19,6 +19,17 @@ O executável traz o frontend embutido e sobe um **Postgres embutido**, sem prec
 
 A configuração fica em `config.yaml`, ao lado do executável. Ele não vai para o git: copie `backend/config.example.yaml` para `backend/config.yaml` e ajuste (veja os comentários no arquivo). Sem o arquivo, valem os padrões do exemplo. O build copia o seu config para `release/` sem sobrescrever um que já exista lá. As opções são: porta, host, abrir o navegador, modo do banco e pasta de dados. Se a porta estiver ocupada, ele escolhe outra livre automaticamente.
 
+## Releases
+
+Cada tag `v*` enviada ao GitHub dispara o workflow [release.yml](.github/workflows/release.yml), que compila e publica uma release com os executáveis de Windows, Linux e macOS (Apple Silicon e Intel):
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+A tag é gravada no executável (aparece no log ao iniciar). Tags com hífen (`v0.2.0-beta.1`) saem como pré-release. As notas trazem instruções de uso, seguidas dos commits desde a tag anterior.
+
 ## Desenvolvimento
 
 ```bash
