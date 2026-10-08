@@ -82,6 +82,33 @@ input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--primary)
 .inline-field { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); font-weight: 500; }
 .inline-field select { width: auto; padding: 7px 10px; }
 
+/* select (shared/ui/Select) */
+.select-trigger {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface); color: var(--text); font-weight: 400; text-align: left; cursor: pointer;
+}
+.select-trigger:hover:not(:disabled) { border-color: #cfd5e3; }
+.select-trigger:focus-visible, .select-trigger[aria-expanded='true'] { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+.select-trigger:disabled { background: var(--bg); color: var(--muted); cursor: default; }
+.select-trigger.is-compact { width: auto; min-width: 140px; max-width: 320px; padding: 7px 10px; }
+.select-value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.select-group-hint { color: var(--muted); }
+.select-caret { color: var(--muted); font-size: 0.8rem; transition: transform 0.15s; }
+.select-trigger[aria-expanded='true'] .select-caret { transform: rotate(180deg); }
+.select-popup {
+  position: fixed; z-index: 50; display: flex; flex-direction: column; max-width: min(420px, calc(100vw - 16px)); max-height: 340px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 32px rgba(29, 36, 51, 0.16); overflow: hidden;
+  font-size: 0.92rem; font-weight: 400; color: var(--text);
+}
+.select-search { margin: 8px 8px 4px; width: auto !important; padding: 7px 10px !important; }
+.select-list { list-style: none; margin: 0; padding: 4px; overflow-y: auto; outline: none; }
+.select-group { padding: 8px 10px 4px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.select-option { padding: 7px 10px; border-radius: 8px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.select-option.is-active { background: var(--bg); }
+.select-option.is-selected { color: var(--primary-hover); font-weight: 600; }
+.select-option.is-selected::after { content: ' ✓'; }
+.select-empty { padding: 10px; color: var(--muted); }
+
 /* modal */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(29, 36, 51, 0.35); display: grid; place-items: center; padding: 16px; z-index: 20; }
 .modal { width: min(480px, 100%); max-height: 92vh; overflow: auto; background: var(--surface); border-radius: 16px; box-shadow: 0 20px 60px rgba(29, 36, 51, 0.25); }
@@ -193,6 +220,11 @@ input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--primary)
 .solution[open] summary { color: var(--muted); }
 .exercise-body pre { margin: 0; padding: 12px 14px; background: #f7f8fc; border: 1px solid var(--border); border-radius: 10px; white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: 0.88rem; }
 .exercise-body { margin-top: 8px; padding-left: 30px; }
+.exercise-body h4 a { font-weight: 500; margin-left: 6px; }
+.pdf-view { display: block; width: 100%; height: 70vh; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; background: #f7f8fc; }
+.pdf-field { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.pdf-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; }
+.file-btn { cursor: pointer; }
 
 @media (max-width: 960px) {
   .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

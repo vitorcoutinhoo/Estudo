@@ -1,10 +1,20 @@
 import { useState } from 'react'
 import { useCached } from '../../shared/cache'
+import { fmtBytes } from '../../shared/format'
 import { useNav } from '../../shared/nav'
 import { ProgressBar } from '../../shared/ui/ProgressBar'
+import { Select } from '../../shared/ui/Select'
 import { useTopics } from '../topics/TopicsContext'
-import { deleteExercise, listExercises, updateExercise, type Exercise } from './api'
+import { TopicSelect } from '../topics/TopicSelect'
+import { deleteExercise, exercisePdfURL, listExercises, updateExercise, type Exercise } from './api'
 import { ExerciseForm } from './ExerciseForm'
+
+type Situation = 'all' | 'solved' | 'pending'
+const SITUATIONS = [
+  { value: 'all' as Situation, label: 'Todos' },
+  { value: 'pending' as Situation, label: 'Pendentes' },
+  { value: 'solved' as Situation, label: 'Resolvidos' },
+]
 
 // carrega todos e filtra por tópico no cliente: trocar de tópico não faz nova requisição
 export const exercisesQuery = ['exercises', () => listExercises()] as const
@@ -13,7 +23,7 @@ export function ExercisesPage() {
   const { topics, reload: reloadTopics } = useTopics()
   const nav = useNav()
   const [topicFilter, setTopicFilter] = useState(nav.topicId ?? 0)
-  const [showSolved, setShowSolved] = useState<'all' | 'solved' | 'pending'>('all')
+  const [showSolved, setShowSolved] = useState<Situation>('all')
   const [editing, setEditing] = useState<Exercise | 'new' | null>(null)
   const [open, setOpen] = useState<number | null>(null)
 
@@ -65,18 +75,11 @@ export function ExercisesPage() {
       <div className="toolbar">
         <label className="inline-field">
           Tópico
-          <select value={topicFilter} onChange={(e) => setTopicFilter(Number(e.target.value))}>
-            <option value={0}>Todos</option>
-            {topics.map((t) => <option key={t.id} value={t.id}>{t.description ? `${t.description} · ` : ''}{t.title}</option>)}
-          </select>
+          <TopicSelect value={topicFilter} onChange={setTopicFilter} allLabel="Todos" compact />
         </label>
         <label className="inline-field">
           Situação
-          <select value={showSolved} onChange={(e) => setShowSolved(e.target.value as typeof showSolved)}>
-            <option value="all">Todos</option>
-            <option value="pending">Pendentes</option>
-            <option value="solved">Resolvidos</option>
-          </select>
+          <Select value={showSolved} options={SITUATIONS} onChange={setShowSolved} compact aria-label="Situação" />
         </label>
       </div>
 
@@ -93,14 +96,30 @@ export function ExercisesPage() {
                 <strong>{e.title}</strong>
                 <span className="muted">{e.topicTitle}</span>
               </button>
+              {e.pdfName && <span className="tag" title={e.pdfName}>PDF</span>}
               <span className={`tag ${e.solved ? 'tag-status-done' : 'tag-status-todo'}`}>{e.solved ? 'Resolvido' : 'Pendente'}</span>
               <button className="btn btn-small" onClick={() => setEditing(e)}>Editar</button>
               <button className="icon-btn" onClick={() => remove(e)} aria-label="Remover exercício">×</button>
             </div>
             {open === e.id && (
               <div className="exercise-body">
-                <h4>Enunciado</h4>
-                <pre>{e.statement || '—'}</pre>
+                {e.pdfName && (
+                  <>
+                    <h4>
+                      Lista de questões{' '}
+                      <a href={exercisePdfURL(e.id)} target="_blank" rel="noreferrer">
+                        📄 {e.pdfName} ({fmtBytes(e.pdfSize)}) ↗
+                      </a>
+                    </h4>
+                    <iframe className="pdf-view" src={exercisePdfURL(e.id)} title={e.pdfName} />
+                  </>
+                )}
+                {(e.statement || !e.pdfName) && (
+                  <>
+                    <h4>Enunciado</h4>
+                    <pre>{e.statement || '—'}</pre>
+                  </>
+                )}
                 <details className="solution">
                   <summary>Mostrar resolução</summary>
                   <pre>{e.solution || '—'}</pre>

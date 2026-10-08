@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { errorMessage } from '../../shared/api'
 import { listTopics } from './api'
 import type { Topic } from './types'
 
@@ -21,7 +22,7 @@ export function TopicsProvider({ children }: { children: ReactNode }) {
       setTopics(await listTopics())
       setError(null)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Falha ao carregar tópicos')
+      setError(errorMessage(e, 'Falha ao carregar tópicos'))
     } finally {
       setLoading(false)
     }

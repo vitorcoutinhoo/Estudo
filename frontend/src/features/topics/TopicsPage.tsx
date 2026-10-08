@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { fmtMinutes } from '../../shared/format'
 import { useNav } from '../../shared/nav'
 import { ProgressBar } from '../../shared/ui/ProgressBar'
+import { labelOptions, Select } from '../../shared/ui/Select'
 import { PRIORITY_LABEL, STATUS_LABEL, TagSelect } from '../../shared/ui/Tags'
 import { SessionForm } from '../sessions/SessionForm'
 import { PeriodsModal } from '../schedule/PeriodsModal'
@@ -11,6 +12,9 @@ import { TopicForm } from './TopicForm'
 import { TopicImport } from './TopicImport'
 import { useTopics } from './TopicsContext'
 import type { Priority, Status, Topic } from './types'
+
+const STATUS_FILTER = [{ value: 'all' as const, label: 'Todos' }, ...labelOptions(STATUS_LABEL)]
+const PRIORITY_FILTER = [{ value: 'all' as const, label: 'Todas' }, ...labelOptions(PRIORITY_LABEL)]
 
 export function TopicsPage() {
   const { topics, loading, error, reload } = useTopics()
@@ -64,17 +68,11 @@ export function TopicsPage() {
       <div className="toolbar">
         <label className="inline-field">
           Status
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as Status | 'all')}>
-            <option value="all">Todos</option>
-            {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
+          <Select value={statusFilter} options={STATUS_FILTER} onChange={setStatusFilter} compact aria-label="Status" />
         </label>
         <label className="inline-field">
           Prioridade
-          <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as Priority | 'all')}>
-            <option value="all">Todas</option>
-            {Object.entries(PRIORITY_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
+          <Select value={priorityFilter} options={PRIORITY_FILTER} onChange={setPriorityFilter} compact aria-label="Prioridade" />
         </label>
       </div>
 

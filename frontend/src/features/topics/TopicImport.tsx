@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent } from 'react'
+import { errorMessage } from '../../shared/api'
 import { fmtMinutes, fromISO } from '../../shared/format'
 import { Modal } from '../../shared/ui/Modal'
 import { PRIORITY_LABEL } from '../../shared/ui/Tags'
@@ -26,7 +27,7 @@ export function TopicImport({ onClose, onSaved }: Props) {
     try {
       setPreview(await importTopics(f, true))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao ler planilha')
+      setError(errorMessage(err, 'Erro ao ler planilha'))
     } finally {
       setBusy(false)
     }
@@ -40,7 +41,7 @@ export function TopicImport({ onClose, onSaved }: Props) {
       onSaved()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao importar')
+      setError(errorMessage(err, 'Erro ao importar'))
       setBusy(false)
     }
   }

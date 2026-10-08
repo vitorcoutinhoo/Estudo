@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useCached } from '../../shared/cache'
 import { fmtMinutes, fromISO } from '../../shared/format'
 import { Modal } from '../../shared/ui/Modal'
 import { useTopics } from '../topics/TopicsContext'
@@ -14,22 +15,8 @@ interface Props {
 /** Horas registradas em um tópico, com edição e remoção de cada registro. */
 export function SessionsModal({ topic, onClose }: Props) {
   const { reload } = useTopics()
-  const [sessions, setSessions] = useState<Session[] | null>(null)
+  const { data: sessions, error, reload: load } = useCached(`sessions:${topic.id}`, () => listSessions(topic.id))
   const [editing, setEditing] = useState<Session | 'new' | null>(null)
-  const [error, setError] = useState('')
-
-  const load = useCallback(async () => {
-    try {
-      setSessions(await listSessions(topic.id))
-      setError('')
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Falha ao carregar registros')
-    }
-  }, [topic.id])
-
-  useEffect(() => {
-    void load()
-  }, [load])
 
   async function remove(s: Session) {
     if (!confirm(`Remover o registro de ${fmtMinutes(s.minutes)}?`)) return

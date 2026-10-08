@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { errorMessage } from '../../shared/api'
 import { useCached } from '../../shared/cache'
 import { addDays, fmtLongDate, fmtMinutes, fmtWeekday, fromISO, todayISO, weekStart } from '../../shared/format'
 import { useNav } from '../../shared/nav'
@@ -36,7 +37,7 @@ export function SchedulePage() {
       await load()
       setActionError('')
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : 'Ação falhou')
+      setActionError(errorMessage(e, 'Ação falhou'))
     }
   }
 

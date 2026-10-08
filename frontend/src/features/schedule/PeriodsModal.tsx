@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useCached } from '../../shared/cache'
 import { fromISO } from '../../shared/format'
 import { Modal } from '../../shared/ui/Modal'
 import type { Topic } from '../topics/types'
@@ -12,22 +13,8 @@ interface Props {
 
 /** Períodos de estudo (itens do cronograma) de um tópico, com inclusão, edição e remoção. */
 export function PeriodsModal({ topic, onClose }: Props) {
-  const [items, setItems] = useState<ScheduleItem[] | null>(null)
+  const { data: items, error, reload: load } = useCached(`periods:${topic.id}`, () => listTopicSchedule(topic.id))
   const [editing, setEditing] = useState<ScheduleItem | 'new' | null>(null)
-  const [error, setError] = useState('')
-
-  const load = useCallback(async () => {
-    try {
-      setItems(await listTopicSchedule(topic.id))
-      setError('')
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Falha ao carregar períodos')
-    }
-  }, [topic.id])
-
-  useEffect(() => {
-    void load()
-  }, [load])
 
   async function remove(i: ScheduleItem) {
     if (!confirm(`Remover o período de ${fromISO(i.date).toLocaleDateString('pt-BR')} do cronograma?`)) return

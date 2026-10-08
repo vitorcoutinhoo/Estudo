@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { errorMessage } from './api'
 
 // Cache em memória das respostas da API: ao trocar de aba a página aparece na hora
 // com os últimos dados e é atualizada em segundo plano.
@@ -33,7 +34,7 @@ export function useCached<T>(key: string, fetcher: () => Promise<T>, deps: unkno
         setError('')
       }
     } catch (e) {
-      if (current.current === key) setError(e instanceof Error ? e.message : 'Falha ao carregar')
+      if (current.current === key) setError(errorMessage(e, 'Falha ao carregar'))
     }
   }, [key])
 

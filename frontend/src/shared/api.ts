@@ -18,3 +18,6 @@ export async function api<T>(path: string, { method = 'GET', body }: Options = {
   }
   return res.status === 204 ? (undefined as T) : res.json()
 }
+
+/** Mensagem legível de um erro qualquer (ex.: o lançado por `api`). */
+export const errorMessage = (e: unknown, fallback: string) => (e instanceof Error ? e.message : fallback)
